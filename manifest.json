@@ -1,0 +1,290 @@
+{
+  "id": "events",
+  "name": "Events",
+  "version": "1.0.0",
+  "description": "A simple list of upcoming events. Shows \"Event in 5 days\" as it approaches, and a message on the day.",
+  "author": "Adam Selby",
+  "repository": "",
+  "documentation": "README.md",
+  "icon": "calendar-clock",
+  "category": "utility",
+  "supports_triggers": true,
+  "min_refresh_seconds": 60,
+  "settings_schema": {
+    "type": "object",
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "title": "Enabled",
+        "default": false
+      },
+      "events": {
+        "type": "array",
+        "title": "Events",
+        "description": "One row per event. End date is optional (for multi-day events).",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "title": "Name",
+              "description": "e.g. Event Name"
+            },
+            "date": {
+              "type": "string",
+              "title": "Date",
+              "description": "YYYY-MM-DD"
+            },
+            "end": {
+              "type": "string",
+              "title": "End Date",
+              "description": "YYYY-MM-DD (optional)"
+            },
+            "message": {
+              "type": "string",
+              "title": "Day-of Message",
+              "description": "Optional. Defaults to TODAY: <NAME>.  Use | for a line break."
+            },
+            "colors": {
+              "type": "string",
+              "title": "Colors",
+              "description": "Optional confetti colors, comma-separated: red, orange, yellow, green, blue, violet, white"
+            }
+          },
+          "required": [
+            "name",
+            "date"
+          ]
+        },
+        "default": []
+      },
+      "timezone": {
+        "type": "string",
+        "title": "Timezone",
+        "description": "Decides when \"today\" starts and ends.",
+        "default": "America/Chicago",
+        "ui:widget": "timezone"
+      },
+      "lookahead_days": {
+        "type": "integer",
+        "title": "Upcoming Window (days)",
+        "description": "How far ahead the upcoming list looks.",
+        "default": 60,
+        "minimum": 1,
+        "maximum": 366
+      },
+      "announce": {
+        "type": "boolean",
+        "title": "Take Over the Board",
+        "description": "Interrupt your normal pages to show the event, then hand the board back.",
+        "default": false
+      },
+      "announce_mode": {
+        "type": "string",
+        "title": "Takeover Style",
+        "description": "Once a day for a set length, or the first few minutes of every hour.",
+        "enum": [
+          "daily",
+          "hourly"
+        ],
+        "enumNames": [
+          "Once a day",
+          "Start of every hour"
+        ],
+        "default": "daily"
+      },
+      "announce_hour": {
+        "type": "integer",
+        "title": "Start Hour",
+        "description": "0-23, local time. Once a day: when it starts. Every hour: the first hour it runs.",
+        "default": 8,
+        "minimum": 0,
+        "maximum": 23
+      },
+      "announce_end_hour": {
+        "type": "integer",
+        "title": "End Hour (every-hour style)",
+        "description": "0-24. The takeover doesn't start in this hour or later.",
+        "default": 22,
+        "minimum": 1,
+        "maximum": 24
+      },
+      "announce_minutes": {
+        "type": "integer",
+        "title": "Takeover Length (minutes)",
+        "description": "Once a day: up to 1440. Every hour: capped at 60.",
+        "default": 30,
+        "minimum": 1,
+        "maximum": 1440
+      },
+      "takeover_priority": {
+        "type": "integer",
+        "title": "Takeover Priority",
+        "description": "When two takeovers overlap, the higher number wins.",
+        "default": 35,
+        "minimum": 1,
+        "maximum": 99
+      },
+      "refresh_seconds": {
+        "type": "integer",
+        "title": "Refresh Interval (seconds)",
+        "description": "How often to recompute (and reshuffle confetti). The date rolls over within this long of midnight.",
+        "default": 300,
+        "minimum": 60,
+        "maximum": 3600
+      }
+    }
+  },
+  "variables": {
+    "groups": {
+      "today": {
+        "label": "Today"
+      },
+      "next": {
+        "label": "Next Event"
+      }
+    },
+    "simple": {
+      "is_event_day": {
+        "description": "\"true\" during an event",
+        "group": "today",
+        "max_length": 5,
+        "example": "false"
+      },
+      "name": {
+        "description": "Today's event",
+        "group": "today",
+        "max_length": 22,
+        "example": "IRELAND"
+      },
+      "message": {
+        "description": "Today's message",
+        "group": "today",
+        "max_length": 44,
+        "example": "TODAY: IRELAND"
+      },
+      "count": {
+        "description": "Events today",
+        "group": "today",
+        "max_length": 2,
+        "example": "1",
+        "type": "number"
+      },
+      "confetti": {
+        "description": "22 random color tiles (themed when colors are set), reshuffled every refresh. LEFT(x.confetti, n * 4) gives n tiles.",
+        "group": "today",
+        "max_length": 22,
+        "example": "{63}{64}{65}"
+      },
+      "next_name": {
+        "description": "Next event",
+        "group": "next",
+        "max_length": 22,
+        "example": "IRELAND"
+      },
+      "next_date": {
+        "description": "e.g. DEC 5",
+        "group": "next",
+        "max_length": 6,
+        "example": "DEC 5"
+      },
+      "next_days": {
+        "description": "Days until the next event",
+        "group": "next",
+        "max_length": 3,
+        "example": "5",
+        "type": "number"
+      },
+      "next_formatted": {
+        "description": "e.g. IRELAND IN 5 DAYS",
+        "group": "next",
+        "max_length": 44,
+        "example": "IRELAND IN 5 DAYS"
+      }
+    },
+    "arrays": {
+      "today": {
+        "label_field": "name",
+        "item_fields": [
+          "name",
+          "message"
+        ]
+      },
+      "upcoming": {
+        "label_field": "name",
+        "item_fields": [
+          "name",
+          "date",
+          "days"
+        ]
+      }
+    }
+  },
+  "max_lengths": {
+    "today.*.name": 22,
+    "today.*.message": 44,
+    "upcoming.*.name": 15,
+    "upcoming.*.date": 6,
+    "upcoming.*.days": 3
+  },
+  "demo": {
+    "name": "Events Demo",
+    "device_type": "flagship",
+    "template": [
+      "",
+      "COUNTDOWN",
+      "{{events.next_name}}",
+      "{{events.next_days}} DAYS",
+      "",
+      ""
+    ],
+    "line_metadata": [
+      {
+        "alignment": "center",
+        "wrap": false
+      },
+      {
+        "alignment": "center",
+        "wrap": false
+      },
+      {
+        "alignment": "center",
+        "wrap": false
+      },
+      {
+        "alignment": "center",
+        "wrap": false
+      },
+      {
+        "alignment": "center",
+        "wrap": false
+      },
+      {
+        "alignment": "center",
+        "wrap": false
+      }
+    ]
+  },
+  "teaser": "IRELAND: 5 DAYS",
+  "previews": [
+    {
+      "device_type": "flagship",
+      "rows": [
+        "      COUNTDOWN",
+        "",
+        "       IRELAND",
+        "        DEC 5",
+        "        5 DAYS",
+        ""
+      ]
+    },
+    {
+      "device_type": "note",
+      "rows": [
+        "    IRELAND",
+        "     DEC 5",
+        "    5 DAYS"
+      ]
+    }
+  ]
+}
