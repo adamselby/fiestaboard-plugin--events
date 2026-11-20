@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "description": "A simple list of upcoming events. Shows \"Event in 5 days\" as it approaches, and a message on the day.",
   "author": "Adam Selby",
-  "repository": "",
+  "repository": "https://github.com/adamselby/fiestaboard-plugin--events",
   "documentation": "README.md",
   "icon": "calendar-clock",
   "category": "utility",
